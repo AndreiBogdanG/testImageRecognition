@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Object Recognition with Camera</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 20px;
+        }
+        #camera {
+            display: block;
+            margin: 0 auto;
+            border: 1px solid #ccc;
+        }
+        #canvas {
+            display: block;
+            margin: 20px auto;
+            border: 1px solid #ccc;
+        }
+        #description {
+            font-size: 18px;
+            margin: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Object Recognition with Camera</h1>
+    <video id="camera" width="640" height="480" autoplay></video>
+    <button id="capture">Capture Image</button>
+    <canvas id="canvas" width="640" height="480"></canvas>
+    <div id="description">The description will appear here.</div>
+
+    <!-- Load TensorFlow.js and ML5.js -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.21.0"></script>
+    <script src="https://unpkg.com/ml5@1/dist/ml5.min.js"></script>
+    <!-- <script src="sketch.js"></script> -->
+    <script>
+        // Variables
+        const video = document.getElementById('camera');
+        const canvas = document.getElementById('canvas');
+        const context = canvas.getContext('2d');
+        const descriptionDiv = document.getElementById('description');
+        let classifier;
+
+        // Load the MobileNet model from ML5.js
+         classifier = ml5.imageClassifier('MobileNet')
+            // .then(model => {
+                // classifier = model;
+                console.log('MobileNet model loaded!');
+            // })
+            // .catch(err => console.error('Error loading model:', err));
+
+        // Access the device camera
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+                video.srcObject = stream;
+                video.play();
+            })
+            .catch(err => console.error('Error accessing camera:', err));
+
+        // Capture the image and classify it
+        document.getElementById('capture').addEventListener('click', () => {
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            classifyImage();
+        });
+
+        // Classify the captured image
+        function classifyImage() {
+            const imgElement = document.createElement('img');
+            imgElement.src = canvas.toDataURL('image/png');
+
+            imgElement.onload = () => {
+                classifier.classify(imgElement)
+                    .then(results => {
+                        const label = results[0].label;
+                        const confidence = (results[0].confidence * 100).toFixed(2);
+                        descriptionDiv.innerHTML = `Description: ${label} (${confidence}%)`;
+                    })
+                    .catch(err => console.error('Error classifying image:', err));
+            };
+        }
+    </script>
+</body>
+</html>
